@@ -1,0 +1,112 @@
+import os
+import random
+import re
+import joblib
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+import nltk
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt_tab', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
+
+DATA_DIR = Path("data")
+MODELS_DIR = Path("models_new")
+MODELS_DIR.mkdir(exist_ok=True)
+
+
+def char_jaccard(s1, s2):
+    set1 = set(str(s1).lower())
+    set2 = set(str(s2).lower())
+    if not set1 or not set2: return 0.0
+    return len(set1 & set2) / len(set1 | set2)
+
+def extract_candidates(article):
+    # Extract continuous non-stopword chunks or just split words
+    tokens = word_tokenize(str(article))
+    candidates = []
+    for i in range(len(tokens) - 2):
+        candidates.append(" ".join(tokens[i:i+random.randint(1, 4)]))
+    return list(set(candidates))
+
+def get_module_b_features(candidate, correct_answer, article, ohe_vectorizer):
+    """Computes the 3 features for Module B."""
+    cand_str = str(candidate).lower()
+    ans_str = str(correct_answer).lower()
+    art_str = str(article).lower()
+    
+    # 1. OHE Cosine Sim
+    try:
+        vecs = ohe_vectorizer.transform([cand_str, ans_str])
+        cos_sim = cosine_similarity(vecs[0], vecs[1])[0,0]
+    except:
+        cos_sim = 0.0
+        
+    # 2. Char match
+    char_match = char_jaccard(cand_str, ans_str)
+    
+    # 3. Frequency in passage
+    freq = art_str.count(cand_str)
+    
+    return [cos_sim, char_match, freq]
+
+
+# We use the validation set as training for Module B to avoid memory OOMs, 
+# as building the dataset involves combinatorial candidate generation.
+print("Loading data...")
+df = pd.read_csv(DATA_DIR / "raw" / "val.csv").dropna().sample(5000, random_state=42)
+
+print("Building One-Hot Encoding vocabulary...")
+# Fit OHE on the answers and distractors
+all_texts = []
+for _, row in df.iterrows():
+    all_texts.extend([str(row['A']), str(row['B']), str(row['C']), str(row['D'])])
+    
+ohe = CountVectorizer(binary=True, max_features=5000, ngram_range=(1,2))
+ohe.fit(all_texts)
+joblib.dump(ohe, MODELS_DIR / "module_b_ohe.pkl")
+
+X, y = [], []
+
+print("Extracting positive and negative examples...")
+for i, row in df.iterrows():
+    art = row['article']
+    ans_letter = row['answer']
+    options = {'A': row['A'], 'B': row['B'], 'C': row['C'], 'D': row['D']}
+    correct_ans = options[ans_letter]
+    
+    # Positive examples (True distractors)
+    distractors = [v for k, v in options.items() if k != ans_letter]
+    for dist in distractors:
+        X.append(get_module_b_features(dist, correct_ans, art, ohe))
+        y.append(1)
+        
+    # Negative examples (Random bad distractors)
+    candidates = extract_candidates(art)
+    random.shuffle(candidates)
+    bad_distractors = candidates[:3]
+    for bad in bad_distractors:
+        X.append(get_module_b_features(bad, correct_ans, art, ohe))
+        y.append(0)
+
+X = np.array(X)
+y = np.array(y)
+print(f"Dataset shape: {X.shape}")
+
+
+print("Training Random Forest Distractor Ranker...")
+rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42, class_weight='balanced')
+rf.fit(X, y)
+
+print("\nClassification Report (Train):")
+preds = rf.predict(X)
+print(classification_report(y, preds))
+
+joblib.dump(rf, MODELS_DIR / "module_b_rf.pkl")
+print("Saved module_b_rf.pkl")
+

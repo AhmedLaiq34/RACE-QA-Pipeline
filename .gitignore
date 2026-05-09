@@ -1,0 +1,33 @@
+# Python & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Models
+models/
+models_new/
+*.pkl
+*.pt
+*.h5
+
+# Excluded Old Notebooks
+notebooks/model_a_baseline.ipynb
+notebooks/model_a_question_gen.ipynb
+notebooks/train_pipeline.ipynb
+
+# Documentation & PDF files
+*.md
+*.pdf
+
+# Data directory
+data/*
+!data/.gitkeep
