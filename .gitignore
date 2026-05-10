@@ -12,7 +12,7 @@ venv.bak/
 # Jupyter Notebooks
 .ipynb_checkpoints/
 
-# Models
+# Models (exclude all trained models)
 models/
 models_new/
 *.pkl
@@ -24,10 +24,19 @@ notebooks/model_a_baseline.ipynb
 notebooks/model_a_question_gen.ipynb
 notebooks/train_pipeline.ipynb
 
-# Documentation & PDF files
+# Documentation & Markdown files (exclude all .md files)
 *.md
 *.pdf
 
-# Data directory
+# Data directory (exclude all data files)
 data/*
 !data/.gitkeep
+
+# Helper/Debug Python files
+check_model.py
+debug_model_a.py
+comprehensive_model_test.py
+retrain_svm_only.py
+
+# Friend's implementation (exclude entire folder)
+friend_implementation/
