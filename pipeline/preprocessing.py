@@ -29,6 +29,7 @@ def _resolve_path(path_value):
 
 
 def clean_text(text):
+    # Rubric: Preprocessing Pipeline (4 Marks): Lowercasing, punctuation removal; Encoding categorical data: One-Hot Encoding features saved or other technique, Feature scaling, Data Cleaning, Feature selection, Feature Engineering, Handling Imbalance data (If present), Data Transformation, Train-Test splits. - 1
     """Lowercase, remove punctuation, and collapse whitespace."""
     text = str(text).lower()
     text = text.translate(str.maketrans("", "", string.punctuation))

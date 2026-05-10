@@ -40,3 +40,7 @@ retrain_svm_only.py
 
 # Friend's implementation (exclude entire folder)
 friend_implementation/
+
+node_modules/
+package-lock.json
+package.json

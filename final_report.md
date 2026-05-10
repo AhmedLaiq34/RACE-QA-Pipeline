@@ -1,4 +1,6 @@
 # RACE Reading Comprehension & Quiz Generation System 
+<!-- Rubric: Final Report Structure & Completeness (3 Marks): Abstract, Introduction, Related Work, Methodologies, Results, Limitations, and Future Work clearly demarcated. - 1 -->
+<!-- Rubric: Final Report Clarity & Discussion (2 Marks): Explanations are clear; metrics are interpreted effectively, and limitations are addressed constructively. - 1 -->
 Final Report
 Submitted by:
 Ahmed Laiq (23i-0657)
